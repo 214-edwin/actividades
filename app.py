@@ -10,7 +10,6 @@ from io import BytesIO
 import gspread
 from supabase import create_client
 from google.oauth2.service_account import Credentials
-st.write(list(st.secrets.keys()))
 supabase = create_client(
     st.secrets["SUPABASE_URL"],
     st.secrets["SUPABASE_KEY"]
@@ -43,7 +42,7 @@ def subir_pdf(file, nombre, usuario):
 scopes = ["https://www.googleapis.com/auth/spreadsheets"]
 
 creds = Credentials.from_service_account_info(
-    dict(st.secrets),
+    dict(st.secrets["gcp_service_account"]),
     scopes=scopes
 )
 
