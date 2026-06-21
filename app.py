@@ -8,10 +8,9 @@ import uuid
 import time
 from io import BytesIO
 import gspread
-from google.oauth2.service_account import Credentials
-
 from supabase import create_client
 from google.oauth2.service_account import Credentials
+st.write(list(st.secrets.keys()))
 supabase = create_client(
     st.secrets["SUPABASE_URL"],
     st.secrets["SUPABASE_KEY"]
