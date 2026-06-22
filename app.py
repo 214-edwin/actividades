@@ -410,7 +410,9 @@ with tab1:
             st.session_state["guardado_ok"] = True
             st.rerun()
         except Exception as e:
-            st.error(e)    
+            st.session_state["error"] = str(e)
+            st.error(f"ERROR: {e}")
+            st.stop()    
     if limpiar:
         st.session_state.edit_id = None
         st.rerun()    
