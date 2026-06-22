@@ -344,7 +344,9 @@ with tab1:
                 st.stop()
 
             if archivo:
+                 st.write("Subiendo PDF...")
                 ruta_archivo = subir_pdf(archivo, archivo.name, trabajador)
+                st.write("PDF listo")
             else:
                 ruta_archivo = ""
 
@@ -369,7 +371,9 @@ with tab1:
             if st.session_state.edit_id is None:
             # 🆕 CREAR
                 registros = pd.concat([registros, pd.DataFrame([nueva_fila])], ignore_index=True)
+                st.write("Guardando en Google Sheets...")
                 sheet.append_row(list(nueva_fila.values()))
+                st.write("Google Sheets listo")
             else:
                 # ✏️ EDITAR (actualización limpia)
                 idx = registros.index[registros["id"] == st.session_state.edit_id]
@@ -406,7 +410,7 @@ with tab1:
             st.session_state["guardado_ok"] = True
             st.rerun()
         except Exception as e:
-            st.error("❌ Ocurrió un error al guardar. Revisa tu conexión o intenta nuevamente.")    
+            st.error(e)    
     if limpiar:
         st.session_state.edit_id = None
         st.rerun()    
