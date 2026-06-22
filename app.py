@@ -344,7 +344,7 @@ with tab1:
                 st.stop()
 
             if archivo:
-                 st.write("Subiendo PDF...")
+                st.write("Subiendo PDF...")
                 ruta_archivo = subir_pdf(archivo, archivo.name, trabajador)
                 st.write("PDF listo")
             else:
