@@ -376,7 +376,7 @@ with tab1:
                 st.write("Google Sheets listo")
             else:
                 # ✏️ EDITAR (actualización limpia)
-                idx = registros.index[registros["id"] == st.session_state.edit_id]
+                #idx = registros.index[registros["id"] == st.session_state.edit_id]
 
                 if len(idx) > 0:
                     registros.loc[idx, "trabajador"] = nueva_fila["trabajador"]
@@ -491,10 +491,10 @@ with tab1:
 
                 with col2:
 
-                    if st.button("✏️ Editar", key=f"edit_{row['id']}"):
-                        st.session_state.edit_id = row["id"]
-                        st.session_state.scroll = True
-                        st.rerun()
+                    #if st.button("✏️ Editar", key=f"edit_{row['id']}"):
+                        #st.session_state.edit_id = row["id"]
+                        #st.session_state.scroll = True
+                        #st.rerun()
 
                     if st.button("🗑️ Eliminar", key=f"del_{row['id']}"):
 
