@@ -374,26 +374,26 @@ with tab1:
                 st.write("Guardando en Google Sheets...")
                 sheet.append_row(list(nueva_fila.values()))
                 st.write("Google Sheets listo")
-            #else:
+            else:
                 # ✏️ EDITAR (actualización limpia)
-                #idx = registros.index[registros["id"] == st.session_state.edit_id]
+                idx = registros.index[registros["id"] == st.session_state.edit_id]
 
-                #if len(idx) > 0:
-                    #registros.loc[idx, "trabajador"] = nueva_fila["trabajador"]
-                    #registros.loc[idx, "sede"] = nueva_fila["sede"]
-                    # registros.loc[idx, "tipo"] = nueva_fila["tipo"]
-                    #registros.loc[idx, "fecha_inicio"] = nueva_fila["fecha_inicio"]
-                    #registros.loc[idx, "fecha_fin"] = nueva_fila["fecha_fin"]
-                    #registros.loc[idx, "observacion"] = nueva_fila["observacion"]
-                    #registros.loc[idx, "archivo"] = nueva_fila["archivo"]
-                    #registros.loc[idx, "fecha_registro"] = nueva_fila["fecha_registro"]
-                    #registros.loc[idx, "estado"] = nueva_fila["estado"]
-                    #data = sheet.get_all_records()
+                if len(idx) > 0:
+                    registros.loc[idx, "trabajador"] = nueva_fila["trabajador"]
+                    registros.loc[idx, "sede"] = nueva_fila["sede"]
+                    registros.loc[idx, "tipo"] = nueva_fila["tipo"]
+                    registros.loc[idx, "fecha_inicio"] = nueva_fila["fecha_inicio"]
+                    registros.loc[idx, "fecha_fin"] = nueva_fila["fecha_fin"]
+                    registros.loc[idx, "observacion"] = nueva_fila["observacion"]
+                    registros.loc[idx, "archivo"] = nueva_fila["archivo"]
+                    registros.loc[idx, "fecha_registro"] = nueva_fila["fecha_registro"]
+                    registros.loc[idx, "estado"] = nueva_fila["estado"]
+                    data = sheet.get_all_records()
 
-                    #for i, row in enumerate(data, start=2):
-                        #if str(row["id"]) == str(st.session_state.edit_id):
-                            #sheet.update(f"A{i}", [list(nueva_fila.values())])
-                            #break
+                    for i, row in enumerate(data, start=2):
+                        if str(row["id"]) == str(st.session_state.edit_id):
+                            sheet.update(f"A{i}", [list(nueva_fila.values())])
+                            break
                     
             df_export = registros.copy()
 
@@ -491,10 +491,10 @@ with tab1:
 
                 with col2:
 
-                    #if st.button("✏️ Editar", key=f"edit_{row['id']}"):
-                        #st.session_state.edit_id = row["id"]
-                        #st.session_state.scroll = True
-                        #st.rerun()
+                    if st.button("✏️ Editar", key=f"edit_{row['id']}"):
+                        st.session_state.edit_id = row["id"]
+                        st.session_state.scroll = True
+                        st.rerun()
 
                     if st.button("🗑️ Eliminar", key=f"del_{row['id']}"):
 
