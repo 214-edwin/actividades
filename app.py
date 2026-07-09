@@ -1225,7 +1225,7 @@ def cargar_actividades():
     return df
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=60)
 def cargar_observaciones():
     response = (
         supabase
