@@ -48,7 +48,7 @@ st.set_page_config(page_title="Sistema de Vacaciones", layout="wide")
 tab1, tab2, tab3 = st.tabs([
     "Calendario",
     "Actividades semanales",
-    "Supervisión"
+    "Seguimiento"
 ])
 ####################espacio inicial ###################################
 st.markdown("""
