@@ -103,7 +103,7 @@ with tab1:
     # -----------------------
     # PATHS
     # -----------------------
-    @st.cache_data(ttl=300)
+    @st.cache_data(ttl=30)
     def cargar_trabajadores():
 
         response = (
@@ -117,8 +117,8 @@ with tab1:
 
     trabajadores = cargar_trabajadores()
 
-    #  CARGAR DATOS DESDE GOOGLE SHEETS
-    @st.cache_data(ttl=300)
+    #  CARGAR DATOS 
+    @st.cache_data(ttl=30)
     def cargar_registros():
         response = (
             supabase
