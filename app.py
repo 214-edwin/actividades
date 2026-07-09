@@ -1273,9 +1273,7 @@ with tab3:
         st.stop()
 
     st.title("👨‍💼 Seguimiento")
-    if st.session_state.observacion_ok:
-        st.success("✅ Observación guardada correctamente.")
-        st.session_state.observacion_ok = False
+    
     st.info("Panel de control de actividades (seguimiento)")
 
     # =========================
@@ -1496,7 +1494,9 @@ with tab3:
             value=observacion_actual,
             height=150
         )
-
+        if st.session_state.observacion_ok:
+            st.success("✅ Observación guardada correctamente.")
+            st.session_state.observacion_ok = False
         if st.button("💾 Guardar observación"):
 
             if filtro_trabajador == "Todos":
