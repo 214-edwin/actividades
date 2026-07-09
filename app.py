@@ -38,23 +38,7 @@ def subir_pdf(file, nombre, usuario):
     )["signedURL"]
 
     return url
-###########################################
-scopes = ["https://www.googleapis.com/auth/spreadsheets"]
-
-creds = Credentials.from_service_account_info(
-    dict(st.secrets["gcp_service_account"]),
-    scopes=scopes
-)
-
-from googleapiclient.discovery import build
-
-
-client = gspread.authorize(creds)
-SHEET_ID = "1rOVDsUrF0pAWtvpl__GsAHAc1dLnFMMDfHp7-FFuCBc"
-spreadsheet = client.open_by_key(SHEET_ID)
-############
-##########################
-sheet = client.open_by_key("1rOVDsUrF0pAWtvpl__GsAHAc1dLnFMMDfHp7-FFuCBc").sheet1
+##################################
  
 ######################################
 
@@ -121,20 +105,29 @@ with tab1:
     # -----------------------
     @st.cache_data(ttl=300)
     def cargar_trabajadores():
-        trabajadores_sheet = client.open_by_key(
-            "1rOVDsUrF0pAWtvpl__GsAHAc1dLnFMMDfHp7-FFuCBc"
-        ).worksheet("trabajadores1")
 
-        return pd.DataFrame(
-            trabajadores_sheet.get_all_records()
+        response = (
+            supabase
+            .table("trabajadores")
+            .select("*")
+            .execute()
         )
+
+        return pd.DataFrame(response.data)
 
     trabajadores = cargar_trabajadores()
 
     #  CARGAR DATOS DESDE GOOGLE SHEETS
     @st.cache_data(ttl=300)
     def cargar_registros():
-        return pd.DataFrame(sheet.get_all_records())
+        response = (
+            supabase
+            .table("vacaciones")
+            .select("*")
+            .execute()
+        )
+
+        return pd.DataFrame(response.data)
 
     if "registros" not in st.session_state:
         st.session_state.registros = cargar_registros()
@@ -150,7 +143,9 @@ with tab1:
     if st.session_state.get("guardado_ok"):
         st.success("✅ Guardado exitosamente")
         st.session_state["guardado_ok"] = False
-
+    if st.session_state.get("eliminado_ok"):
+        st.success("✅ Registro eliminado correctamente")
+        st.session_state["eliminado_ok"] = False
     # 🧠 si está vacío, crear estructura
     if registros.empty:
         registros = pd.DataFrame(columns=[
@@ -212,26 +207,7 @@ with tab1:
                 return True
 
         return False
-    def actualizar_fila(sheet, df, id_buscar):
-        data = sheet.get_all_records()
-
-        for i, row in enumerate(data, start=2):
-            if str(row["id"]) == str(id_buscar):
-
-                fila = df[df["id"] == id_buscar]
-                if fila.empty:
-                    return
-
-                valores = fila.iloc[0].tolist()
-
-                # 🔥 FORZAR UPDATE REAL DE FILA COMPLETA
-                sheet.update(
-                    range_name=f"A{i}",
-                    values=[valores],
-                    value_input_option="RAW"
-                )
-
-                return
+    
     # -----------------------
     # FORMULARIO
     # -----------------------
@@ -370,13 +346,20 @@ with tab1:
 
             if st.session_state.edit_id is None:
             # 🆕 CREAR
-                registros = pd.concat([registros, pd.DataFrame([nueva_fila])], ignore_index=True)
-                st.write("Guardando en Google Sheets...")
-                sheet.append_row(list(nueva_fila.values()))
-                st.write("Google Sheets listo")
+                response = (
+                    supabase
+                    .table("vacaciones")
+                    .insert(nueva_fila)
+                    .execute()
+                )
+
+                registros = pd.concat(
+                    [registros, pd.DataFrame([nueva_fila])],
+                    ignore_index=True
+                )
             else:
                 # ✏️ EDITAR (actualización limpia)
-                #idx = registros.index[registros["id"] == st.session_state.edit_id]
+                idx = registros.index[registros["id"] == st.session_state.edit_id]
 
                 if len(idx) > 0:
                     registros.loc[idx, "trabajador"] = nueva_fila["trabajador"]
@@ -388,21 +371,6 @@ with tab1:
                     registros.loc[idx, "archivo"] = nueva_fila["archivo"]
                     registros.loc[idx, "fecha_registro"] = nueva_fila["fecha_registro"]
                     registros.loc[idx, "estado"] = nueva_fila["estado"]
-                    data = sheet.get_all_records()
-
-                    for i, row in enumerate(data, start=2):
-                        if str(row["id"]) == str(st.session_state.edit_id):
-                            sheet.update(f"A{i}", [list(nueva_fila.values())])
-                            break
-                    
-            df_export = registros.copy()
-
-            # 🔧 CONVERTIR FECHAS A TEXTO (CLAVE DEL FIX)
-            for col in ["fecha_inicio", "fecha_fin", "fecha_registro"]:
-                if col in df_export.columns:
-                    df_export[col] = df_export[col].astype(str)
-
-            data = [df_export.columns.tolist()] + df_export.values.tolist()
 
             st.cache_data.clear()
             st.session_state.edit_id = None
@@ -511,14 +479,16 @@ with tab1:
 
                                 registros.loc[registros["id"] == row["id"], "estado"] = "inactivo"
 
-                                df_export = registros.copy()
-                                df_export["fecha_inicio"] = df_export["fecha_inicio"].astype(str)
-                                df_export["fecha_fin"] = df_export["fecha_fin"].astype(str)
-                                df_export["fecha_registro"] = df_export["fecha_registro"].astype(str)
-
-                                sheet.update([df_export.columns.tolist()] + df_export.values.tolist())
+                                (
+                                    supabase
+                                    .table("vacaciones")
+                                    .update({"estado": "inactivo"})
+                                    .eq("id", row["id"])
+                                    .execute()
+                                )
 
                                 st.cache_data.clear()
+                                st.session_state["eliminado_ok"] = True
                                 time.sleep(0.25)
                                 st.rerun()
 
@@ -658,22 +628,21 @@ with tab1:
 # =====================================================
 # SEGUNDA HOJA : ACTIVIDADES SEMANALES
 # =====================================================
-SHEET_ID = "1rOVDsUrF0pAWtvpl__GsAHAc1dLnFMMDfHp7-FFuCBc"
-
-spreadsheet = client.open_by_key(SHEET_ID)
-
-sheet_trabajadores = spreadsheet.worksheet("trabajadores")
-sheet_actividades = spreadsheet.worksheet("actividades")
-sheet_observaciones = spreadsheet.worksheet("observaciones")
 
 with tab2:
     
 
     @st.cache_data(ttl=300)
     def cargar_trabajadores():
-        return pd.DataFrame(sheet_trabajadores.get_all_records())
-    trab_df = cargar_trabajadores()
+        response = (
+            supabase
+            .table("trabajador2")
+            .select("*")
+            .execute()
+        )
 
+        return pd.DataFrame(response.data)
+    trab_df = cargar_trabajadores()
     lista_trabajadores_semanal = (
         trab_df[trab_df["estado"] == "activo"]["trabajador"]
         .tolist()
@@ -691,6 +660,8 @@ with tab2:
         st.session_state.rol_actividades = None
 #######################################################################
     st.title("📋 Actividades Semanales")
+    if st.session_state.get("semana_guardada_ok"):
+       st.success("✅ La semana fue registrada correctamente.")
     if st.session_state.usuario_actividades is None:
 
         st.subheader("🔐 Acceso")
@@ -748,7 +719,14 @@ with tab2:
         # =========================
         @st.cache_data(ttl=300)
         def cargar_actividades():
-            df = pd.DataFrame(sheet_actividades.get_all_records() or [])
+            response = (
+                supabase
+                .table("actividades")
+                .select("*")
+                .execute()
+            )
+
+            df = pd.DataFrame(response.data)
 
             if df.empty:
                 df = pd.DataFrame(columns=[
@@ -758,7 +736,9 @@ with tab2:
                     "actividad",
                     "estado",
                     "fecha_registro",
-                    "fecha_actualizacion"
+                    "fecha_actualizacion",
+                    "semana",
+                    "anio",
                     "motivo_eliminacion"
                 ])
 
@@ -772,11 +752,18 @@ with tab2:
 
         @st.cache_data(ttl=300)
         def cargar_observaciones():
-            df = pd.DataFrame(sheet_observaciones.get_all_records())
+            response = (
+                supabase
+                .table("observaciones")
+                .select("*")
+                .execute()
+            )
+            df = pd.DataFrame(response.data)
+
             if not df.empty:
                 df.columns = df.columns.str.strip()
-            return df
 
+            return df
         obs_df = cargar_observaciones()
 
         if not obs_df.empty:
@@ -900,7 +887,24 @@ with tab2:
                         st.warning("⚠️ Esta semana ya tiene actividades registradas para este trabajador")
                         st.stop()
 
-                    sheet_actividades.append_rows(filas)
+                    datos = []
+
+                    for fila in filas:
+                        datos.append({
+                            "id": fila[0],
+                            "trabajador": fila[1],
+                            "fecha": fila[2],
+                            "actividad": fila[3],
+                            "estado": fila[4],
+                            "fecha_registro": fila[5],
+                            "fecha_actualizacion": None if fila[6] == "" else fila[6],
+                            "semana": semana,
+                            "anio": anio,
+                            "motivo_eliminacion": ""
+                        })
+
+                    supabase.table("actividades").insert(datos).execute()
+                    
                     cargar_actividades.clear()
                     st.session_state.actividades_df = cargar_actividades()
                     st.success("Semana guardada correctamente")
@@ -1025,12 +1029,11 @@ with tab2:
                                                 "motivo_eliminacion"
                                             ] = motivo
 
-                                            df_export = actividades_df.copy()
-                                            df_export["fecha"] = df_export["fecha"].astype(str)
-                                            print("FILAS A ENVIAR:", len(df_export))
-                                            sheet_actividades.update(
-                                                [df_export.columns.tolist()] + df_export.values.tolist()
-                                            )
+                                            supabase.table("actividades").update({
+                                                "estado": "inactivo",
+                                                "fecha_actualizacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                "motivo_eliminacion": motivo
+                                            }).eq("id", row["id"]).execute()
 
                                             st.cache_data.clear()
                                             st.rerun()
@@ -1073,12 +1076,12 @@ with tab2:
                                             "estado"
                                         ] = "No iniciado"
 
-                                        df_export = actividades_df.copy()
-                                        df_export["fecha"] = df_export["fecha"].astype(str)
-                                        print("ELIMINAR ACTIVIDAD:", len(df_export))
-                                        sheet_actividades.update(
-                                            [df_export.columns.tolist()] + df_export.values.tolist()
-                                        )
+                                        supabase.table("actividades").update({
+                                            "actividad": nuevo_texto,
+                                            "fecha_actualizacion": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                            "estado": "No iniciado",
+                                            "motivo_eliminacion": f"Editado: antes '{row['actividad']}' → ahora '{nuevo_texto}'"
+                                        }).eq("id", row["id"]).execute()
 
                                         st.cache_data.clear()
                                         st.session_state.edit_actividad_id = None
@@ -1098,15 +1101,18 @@ with tab2:
                             days=["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"].index(dia_es)
                         )
 
-                        sheet_actividades.append_row([
-                            str(uuid.uuid4()),
-                            trabajador_consulta,
-                            fecha_dia.strftime("%Y-%m-%d"),
-                            "",
-                            "No iniciado",
-                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            ""
-                        ])
+                        supabase.table("actividades").insert({
+                            "id": str(uuid.uuid4()),
+                            "trabajador": trabajador_consulta,
+                            "fecha": fecha_dia.strftime("%Y-%m-%d"),
+                            "actividad": "",
+                            "estado": "No iniciado",
+                            "fecha_registro": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            "fecha_actualizacion": None,
+                            "semana": semana_consulta,
+                            "anio": anio_consulta,
+                            "motivo_eliminacion": ""
+                        }).execute()
 
                         st.cache_data.clear()
                         time.sleep(0.25)
@@ -1193,21 +1199,47 @@ with tab2:
 
 @st.cache_data(ttl=300)
 def cargar_trabajadores():
-    ws = spreadsheet.worksheet("trabajadores")
-    return pd.DataFrame(ws.get_all_records())
+    response = (
+        supabase
+        .table("trabajador2")
+        .select("*")
+        .execute()
+    )
+    return pd.DataFrame(response.data)
 
 
 @st.cache_data(ttl=300)
 def cargar_actividades():
-    ws = spreadsheet.worksheet("actividades")
-    return pd.DataFrame(ws.get_all_records())
+    response = (
+        supabase
+        .table("actividades")
+        .select("*")
+        .execute()
+    )
+
+    df = pd.DataFrame(response.data)
+
+    if not df.empty:
+        df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
+
+    return df
 
 
 @st.cache_data(ttl=300)
 def cargar_observaciones():
-    ws = spreadsheet.worksheet("observaciones")
-    return pd.DataFrame(ws.get_all_records())
+    response = (
+        supabase
+        .table("observaciones")
+        .select("*")
+        .execute()
+    )
 
+    df = pd.DataFrame(response.data)
+
+    if not df.empty:
+        df.columns = df.columns.str.strip()
+
+    return df
 
 with tab3:
     st.session_state.saving = False
@@ -1229,7 +1261,7 @@ with tab3:
 
         if st.button("Entrar"):
 
-            if clave == "1234":
+            if clave == st.secrets["CLAVE_SUPERVISOR"]:
                 st.session_state.supervisor_ok = True
                 st.rerun()
             else:
@@ -1304,7 +1336,42 @@ with tab3:
             file_name=f"supervision_{filtro_trabajador}_{lunes_base}.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
+        # =========================
+        # EXPORTAR HISTORIAL COMPLETO
+        # =========================
 
+        st.divider()
+
+        st.subheader("📚 Historial completo")
+
+        if st.button("📥 Generar Excel histórico completo"):
+
+            historial_df = cargar_actividades()
+
+            historial_df["fecha"] = (
+                historial_df["fecha"]
+                .astype(str)
+            )
+
+            output_historial = BytesIO()
+
+            with pd.ExcelWriter(
+                output_historial,
+                engine="openpyxl"
+            ) as writer:
+
+                historial_df.to_excel(
+                    writer,
+                    index=False,
+                    sheet_name="Historial"
+                )
+
+            st.download_button(
+                "⬇️ Descargar historial completo",
+                data=output_historial.getvalue(),
+                file_name="historial_completo_actividades.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
     # =========================
     # LAYOUT
     # =========================
@@ -1382,16 +1449,15 @@ with tab3:
                     "estado"
                 ] = estado_actual
 
-            df_export = actividades_df.copy()
-            df_export["fecha"] = df_export["fecha"].astype(str)
+            for _, row in df.iterrows():
+                estado_actual = st.session_state.get(
+                    f"estado_{row['id']}_{row.name}",
+                    row["estado"]
+                )
 
-            sheet_actividades = spreadsheet.worksheet("actividades")
-
-            print("ELIMINAR ACTIVIDAD:", len(df_export))
-
-            sheet_actividades.update(
-                [df_export.columns.tolist()] + df_export.values.tolist()
-            )
+                supabase.table("actividades").update({
+                    "estado": estado_actual
+                }).eq("id", row["id"]).execute()
 
             st.cache_data.clear()
             st.success("✅ Cambios guardados correctamente")
@@ -1438,8 +1504,6 @@ with tab3:
             semana_actual = lunes_base.isocalendar()[1]
             anio_actual = lunes_base.year
 
-            sheet_observaciones = spreadsheet.worksheet("observaciones")
-
             obs_existente = obs_df[
                 (obs_df["trabajador"] == filtro_trabajador) &
                 (obs_df["semana"].astype(int) == semana_actual) &
@@ -1448,25 +1512,22 @@ with tab3:
 
             if obs_existente.empty:
 
-                nuevo_id = 1 if obs_df.empty else int(obs_df["id"].max()) + 1
-
-                sheet_observaciones.append_row([
-                    nuevo_id,
-                    filtro_trabajador,
-                    semana_actual,
-                    anio_actual,
-                    observacion_texto,
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                ])
+                supabase.table("observaciones").insert({
+                    "trabajador": filtro_trabajador,
+                    "semana": semana_actual,
+                    "anio": anio_actual,
+                    "observacion": observacion_texto,
+                    "fecha_registro": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                }).execute()
 
             else:
 
-                fila = obs_existente.index[0] + 2
-
-                sheet_observaciones.update(
-                    f"E{fila}",
-                    [[observacion_texto]]
-                )
+                supabase.table("observaciones").update({
+                    "observacion": observacion_texto
+                }).eq("trabajador", filtro_trabajador)\
+                .eq("semana", semana_actual)\
+                .eq("anio", anio_actual)\
+                .execute()
 
             st.success("✅ Observación guardada")
             st.rerun()
