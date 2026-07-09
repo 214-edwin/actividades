@@ -1242,6 +1242,9 @@ def cargar_observaciones():
     return df
 
 with tab3:
+    if "observacion_ok" not in st.session_state:
+        st.session_state.observacion_ok = False
+        
     st.session_state.saving = False
 
     trab_df = cargar_trabajadores()
@@ -1270,6 +1273,9 @@ with tab3:
         st.stop()
 
     st.title("👨‍💼 Seguimiento")
+    if st.session_state.observacion_ok:
+        st.success("✅ Observación guardada correctamente.")
+        st.session_state.observacion_ok = False
     st.info("Panel de control de actividades (seguimiento)")
 
     # =========================
@@ -1529,5 +1535,6 @@ with tab3:
                 .eq("anio", anio_actual)\
                 .execute()
 
-            st.success("✅ Observación guardada")
+            st.cache_data.clear()
+            st.session_state.observacion_ok = True
             st.rerun()
