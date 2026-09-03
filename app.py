@@ -1093,14 +1093,12 @@ with tab2:
                                         st.session_state.edit_actividad_id = None
                                         st.rerun()
 
-                    st.button(f"➕ Agregar actividad en {dia_es}", key=f"add_{dia_es}")
-
-                    if st.session_state.get(f"add_{dia_es}"):
+                    if st.button(f"➕ Agregar actividad en {dia_es}", key=f"add_{dia_es}"):
 
                         fecha_dia = lunes_consulta + timedelta(
-                            days=["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"].index(dia_es)
+                            days=["Lunes","Martes","Miércoles","Jueves","Viernes"].index(dia_es)
                         )
-
+                    
                         supabase.table("actividades").insert({
                             "id": str(uuid.uuid4()),
                             "trabajador": trabajador_consulta,
@@ -1113,11 +1111,11 @@ with tab2:
                             "anio": anio_consulta,
                             "motivo_eliminacion": ""
                         }).execute()
-
+                    
                         st.cache_data.clear()
                         time.sleep(0.25)
                         st.rerun()
-
+                        
         # =========================
         # DERECHA (SOLO ESPACIOS)
         # =========================
