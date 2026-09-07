@@ -118,7 +118,7 @@ with tab1:
     trabajadores = cargar_trabajadores()
 
     #  CARGAR DATOS 
-    @st.cache_data(ttl=30)
+    @st.cache_data(ttl=60)
     def cargar_registros():
         response = (
             supabase
@@ -632,7 +632,7 @@ with tab1:
 with tab2:
     
 
-    @st.cache_data(ttl=100)
+    @st.cache_data(ttl=60)
     def cargar_trabajadores():
         response = (
             supabase
@@ -717,7 +717,7 @@ with tab2:
         # =========================
         # CARGA DATOS
         # =========================
-        @st.cache_data(ttl=100)
+        @st.cache_data(ttl=60)
         def cargar_actividades():
             response = (
                 supabase
@@ -750,7 +750,7 @@ with tab2:
         actividades_df = cargar_actividades()
         actividades_df["fecha"] = pd.to_datetime(actividades_df["fecha"], errors="coerce")
 
-        @st.cache_data(ttl=30)
+        @st.cache_data(ttl=60)
         def cargar_observaciones():
             response = (
                 supabase
@@ -1195,7 +1195,7 @@ with tab2:
 # CARGAS GLOBALES (FUERA DE TAB3)
 # =========================
 
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=60)
 def cargar_trabajadores():
     response = (
         supabase
