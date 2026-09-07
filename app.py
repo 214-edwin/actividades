@@ -632,7 +632,7 @@ with tab1:
 with tab2:
     
 
-    @st.cache_data(ttl=30)
+    @st.cache_data(ttl=100)
     def cargar_trabajadores():
         response = (
             supabase
@@ -717,6 +717,7 @@ with tab2:
         # =========================
         # CARGA DATOS
         # =========================
+        @st.cache_data(ttl=100)
         def cargar_actividades():
             response = (
                 supabase
