@@ -717,7 +717,6 @@ with tab2:
         # =========================
         # CARGA DATOS
         # =========================
-        @st.cache_data(ttl=30)
         def cargar_actividades():
             response = (
                 supabase
@@ -1205,8 +1204,6 @@ def cargar_trabajadores():
     )
     return pd.DataFrame(response.data)
 
-
-@st.cache_data(ttl=30)
 def cargar_actividades():
     response = (
         supabase
