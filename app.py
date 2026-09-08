@@ -719,27 +719,38 @@ with tab2:
         # =========================
         @st.cache_data(ttl=60)
         def cargar_actividades():
-            response = (
-                supabase
-                .table("actividades")
-                .select("*")
-                .execute()
-            )
 
-            df = pd.DataFrame(response.data)
+            todas = []
+            inicio = 0
+            limite = 1000
+
+            while True:
+
+                response = (
+                    supabase
+                    .table("actividades")
+                    .select("*")
+                    .range(inicio, inicio + limite - 1)
+                    .execute()
+                )
+
+                if not response.data:
+                    break
+
+                todas.extend(response.data)
+
+                if len(response.data) < limite:
+                    break
+
+                inicio += limite
+
+            df = pd.DataFrame(todas)
 
             if df.empty:
                 df = pd.DataFrame(columns=[
-                    "id",
-                    "trabajador",
-                    "fecha",
-                    "actividad",
-                    "estado",
-                    "fecha_registro",
-                    "fecha_actualizacion",
-                    "semana",
-                    "anio",
-                    "motivo_eliminacion"
+                    "id","trabajador","fecha","actividad","estado",
+                    "fecha_registro","fecha_actualizacion",
+                    "semana","anio","motivo_eliminacion"
                 ])
 
             return df
