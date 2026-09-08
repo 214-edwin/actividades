@@ -939,7 +939,8 @@ with tab2:
                 value=None,
                 key="lunes_consulta"
             )
-
+            if lunes_consulta:
+                lunes_consulta = lunes_consulta - timedelta(days=lunes_consulta.weekday())
             # =========================
             # EDITAR
             # =========================
