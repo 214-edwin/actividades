@@ -1412,9 +1412,9 @@ with tab3:
 
                     fecha_dt = pd.to_datetime(fecha)
                     st.markdown(f"### 📅 {fecha_dt.strftime('%Y/%m/%d')} ({fecha_dt.day_name()})")
-                    st.write(fecha, len(df_dia))
+                    
                     df_dia = df_trab[df_trab["fecha"].dt.date == fecha]
-
+                    st.write(fecha, len(df_dia))
                     for _, row in df_dia.iterrows():
 
                         col1, col2 = st.columns([6, 2])
