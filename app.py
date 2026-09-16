@@ -1322,6 +1322,11 @@ with tab3:
 
     df = actividades_df
     df = df[df["estado"] != "inactivo"]
+    st.dataframe(
+        df[
+            (df["trabajador"] == filtro_trabajador)
+        ][["fecha","actividad","estado"]]
+    )
     if filtro_trabajador == "Todos" or lunes_base is None:
         df = df.iloc[0:0]
     else:
@@ -1414,7 +1419,7 @@ with tab3:
                     st.markdown(f"### 📅 {fecha_dt.strftime('%Y/%m/%d')} ({fecha_dt.day_name()})")
                     
                     df_dia = df_trab[df_trab["fecha"].dt.date == fecha]
-                    st.write(f"{fecha} : {len(df_dia)} actividades")
+                    
                     for _, row in df_dia.iterrows():
 
                         col1, col2 = st.columns([6, 2])
