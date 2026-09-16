@@ -1322,11 +1322,7 @@ with tab3:
 
     df = actividades_df
     df = df[df["estado"] != "inactivo"]
-    st.dataframe(
-        df[
-            (df["trabajador"] == filtro_trabajador)
-        ][["fecha","actividad","estado"]]
-    )
+
     if filtro_trabajador == "Todos" or lunes_base is None:
         df = df.iloc[0:0]
     else:
@@ -1334,7 +1330,10 @@ with tab3:
         lunes = lunes_base
         dias = pd.date_range(lunes, periods=5)
         df = df[df["fecha"].dt.date.isin(dias.date)]
-
+        st.write("Filas filtradas:", len(df))
+        st.dataframe(
+            df[["fecha", "actividad", "estado"]].sort_values("fecha")
+        )
     # =========================
     # EXPORTAR
     # =========================
