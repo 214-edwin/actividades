@@ -1414,7 +1414,7 @@ with tab3:
                     st.markdown(f"### 📅 {fecha_dt.strftime('%Y/%m/%d')} ({fecha_dt.day_name()})")
                     
                     df_dia = df_trab[df_trab["fecha"].dt.date == fecha]
-                    st.write(fecha, len(df_dia))
+                    st.write(f"{fecha} : {len(df_dia)} actividades")
                     for _, row in df_dia.iterrows():
 
                         col1, col2 = st.columns([6, 2])
