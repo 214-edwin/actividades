@@ -1203,7 +1203,7 @@ with tab2:
 # TERCERA HOJA : SUPERVISIÓN JEFE
 # =====================================================
 
-# =========================
+# ==============A===========
 # CARGAS GLOBALES (FUERA DE TAB3)
 # =========================
 
@@ -1218,14 +1218,32 @@ def cargar_trabajadores():
     return pd.DataFrame(response.data)
 
 def cargar_actividades():
-    response = (
-        supabase
-        .table("actividades")
-        .select("*")
-        .execute()
-    )
 
-    df = pd.DataFrame(response.data)
+    todas = []
+    inicio = 0
+    limite = 1000
+
+    while True:
+
+        response = (
+            supabase
+            .table("actividades")
+            .select("*")
+            .range(inicio, inicio + limite - 1)
+            .execute()
+        )
+
+        if not response.data:
+            break
+
+        todas.extend(response.data)
+
+        if len(response.data) < limite:
+            break
+
+        inicio += limite
+
+    df = pd.DataFrame(todas)
 
     if not df.empty:
         df["fecha"] = pd.to_datetime(df["fecha"], errors="coerce")
@@ -1330,10 +1348,7 @@ with tab3:
         lunes = lunes_base
         dias = pd.date_range(lunes, periods=5)
         df = df[df["fecha"].dt.date.isin(dias.date)]
-        st.write("Filas filtradas:", len(df))
-        st.dataframe(
-            df[["fecha", "actividad", "estado"]].sort_values("fecha")
-        )
+        
     # =========================
     # EXPORTAR
     # =========================
